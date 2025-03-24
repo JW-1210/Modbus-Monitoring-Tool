@@ -87,6 +87,11 @@ class MainWindow(QMainWindow):
         
         # 모니터 스레드 시작
         self.monitor_thread.start()
+
+        # 하트비트 연결
+        self.register_widget.heartbeat_signal.connect(
+            self.monitor_thread.set_heartbeat
+        )
         
     def closeEvent(self, event):
         self.monitor_thread.stop()

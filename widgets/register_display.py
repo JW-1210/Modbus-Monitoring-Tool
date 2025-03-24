@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt5.QtCore import Qt, pyqtSignal
 
 class RegisterDisplayWidget(QWidget):
-     # 새로운 시그널 추가 - 레지스터 주소, 값
+    # 새로운 시그널 추가 - 레지스터 주소, 값
     register_write_signal = pyqtSignal(int, int)
+    heartbeat_signal = pyqtSignal(bool)
 
     def __init__(self):
         super().__init__()
@@ -15,6 +16,21 @@ class RegisterDisplayWidget(QWidget):
         # 레지스터 모니터링 그룹
         self.group_box = QGroupBox("Register Monitoring")
         self.group_layout = QVBoxLayout()
+
+        # 하트비트 그룹박스 추가
+        self.heartbeat_group = QGroupBox("Wedling Control")
+        self.heartbeat_layout = QHBoxLayout()
+
+        # 하트비트 버튼
+        self.heartbeat_button = QPushButton("Welder Beat ON")
+        self.heartbeat_button.setCheckable(True)
+        self.heartbeat_button.clicked.connect(self.toggle_heartbeat)
+
+        self.heartbeat_layout.addWidget(self.heartbeat_button)
+        self.heartbeat_group.setLayout(self.heartbeat_layout)
+
+        # 레이아웃에 하트비트 그룹 추가
+        self.layout.addWidget(self.heartbeat_group)
         
         # 모니터링할 레지스터 선택 영역
         self.select_layout = QHBoxLayout()
@@ -48,6 +64,21 @@ class RegisterDisplayWidget(QWidget):
         # 모니터링 중인 레지스터 목록
         self.monitored_registers = {}
         self.next_row = 1
+
+        # 하트비트 상태
+        self.heartbeat_active = False
+
+    def toggle_heartbeat(self):
+        '''heartbeat active/unactive toggle'''
+        self.heartbeat_active = self.heartbeat_button.isChecked()
+
+        if self.heartbeat_active:
+            self.heartbeat_button.setText("Welder Beat OFF")
+            self.heartbeat_signal.emit(True)
+
+        else:
+            self.heartbeat_button.setText("Welder Beat ON")
+            self.heartbeat_signal.emit(False)
     
     def add_register_monitor(self):
         register = self.register_spinbox.value()

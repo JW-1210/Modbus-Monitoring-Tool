@@ -20,9 +20,78 @@ class MonitorThread(QThread):
         self._last_values = {}  # 마지막으로 읽은 값을 저장
         self._pending_registers = set()  # 읽기가 요청된 레지스터
 
+        # 하트비트 관련 변수 추가
+        self._heartbeat_active = False
+        self._heartbeat_value = 0  # 0부터 시작
+        self._heartbeat_max = 16   # 0-15 사이 순환 (4비트)
+
         # 자체 이벤트 루프 생성
         self._loop = None
-    
+
+    # 하트비트 제어 메서드 추가
+    def set_heartbeat(self, active):
+        """하트비트 상태 설정"""
+        self._heartbeat_active = active
+        if active:
+            self.log_signal.emit("웰딩 하트비트 전송 시작 (레지스터 211)")
+            # 하트비트 값 초기화
+            self._heartbeat_value = 1
+            # 첫 하트비트 전송
+            if self._loop:
+                asyncio.run_coroutine_threadsafe(self._send_heartbeat(), self._loop)
+        else:
+            self.log_signal.emit("웰딩 하트비트 전송 중지")
+
+    async def _send_heartbeat(self):
+        """하트비트 값 전송"""
+        if not self._heartbeat_active:
+            return
+        
+        try:
+            if self.monitor and self.monitor.client and self.monitor.client.connected:
+                # 현재 레지스터 211의 값 읽기
+                current_values = await self.monitor.read_registers(211, 1)
+                current_value = current_values[0] if current_values else 0
+                
+                # 이미 할당된 비트들의 마스크 (비트 7, 5, 4, 8)
+                reserved_bits_mask = (1 << 7) | (1 << 5) | (1 << 4) | (1 << 8)
+                
+                # 현재 레지스터 값에서 예약된 비트들을 보존
+                preserved_bits = current_value & reserved_bits_mask
+                
+                # 하트비트 값을 비예약 비트들에 설정 (비트 0-3, 6, 9-15)
+                # 1~500 대신 0~15로 범위 조정 (4비트로 표현 가능한 범위)
+                heartbeat_bits = self._heartbeat_value & 0x0F  # 하위 4비트만 사용
+                
+                # 하트비트 값을 비트 0-3에 위치시킴 (또는 다른 사용 가능 비트에 배치 가능)
+                new_value = preserved_bits | heartbeat_bits
+                
+                # 레지스터에 쓰기
+                await self.monitor.client.write_register(
+                    address=211,
+                    value=new_value
+                )
+                
+                # 로그에 기록
+                # self.log_signal.emit(f"하트비트 전송: 레지스터 211 = {new_value} (하트비트 비트값: {heartbeat_bits})")
+                
+                # 다음 하트비트 값 계산 (0-15 사이 순환)
+                self._heartbeat_value = (self._heartbeat_value + 1) % 16
+                
+                # 0.5초 후 다음 하트비트 전송
+                if self._heartbeat_active and self._loop:
+                    self._loop.call_later(0.5, 
+                        lambda: asyncio.create_task(self._send_heartbeat())
+                    )
+        
+        except Exception as e:
+            self.log_signal.emit(f"하트비트 전송 오류: {str(e)}")
+            # 오류 발생해도 계속 시도
+            if self._heartbeat_active and self._loop:
+                self._loop.call_later(1.0, 
+                    lambda: asyncio.create_task(self._send_heartbeat())
+                )
+            
     def run(self):
         
         # 새 이벤트 루프 생성
@@ -287,6 +356,7 @@ class MonitorThread(QThread):
     
     def stop(self):
         self._running = False
+        self._heartbeat_active = False
         if self._loop:
             # 이벤트 루프 중지
             asyncio.run_coroutine_threadsafe(self.cleanup(), self._loop)
