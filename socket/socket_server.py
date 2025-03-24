@@ -118,7 +118,7 @@ class SocketServer:
 class SocketMonitorThread(QThread):
     log_signal = pyqtSignal(str)
     
-    def __init__(self, host='192.168.1.37', port=8888):
+    def __init__(self, host='192.168.1.47', port=8888):
         super().__init__()
         self.host = host
         self.port = port
