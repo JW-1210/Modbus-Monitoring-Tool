@@ -4,7 +4,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from .utils import PoseParser
 
 class SocketServer:
-    def __init__(self, host='192.168.1.37', port=8888):
+    def __init__(self, host='0.0.0.0', port=12345):
         self.host = host
         self.port = port
         self.callback = None
@@ -118,7 +118,7 @@ class SocketServer:
 class SocketMonitorThread(QThread):
     log_signal = pyqtSignal(str)
     
-    def __init__(self, host='192.168.1.47', port=8888):
+    def __init__(self, host='0.0.0.0', port=12345):
         super().__init__()
         self.host = host
         self.port = port
@@ -126,6 +126,7 @@ class SocketMonitorThread(QThread):
         self.socket_server.set_callback(self.process_message)
         self._loop = None
         self._running = True
+        self.server_started = True
         
     def run(self):
         """쓰레드 시작 메서드"""
@@ -136,6 +137,13 @@ class SocketMonitorThread(QThread):
         # 서버 시작
         try:
             self._loop.run_until_complete(self.socket_server.start())
+            
+        except OSError as e:
+            # 바인딩 오류 발생 시 로그에 메시지 전송
+            error_msg = f"소켓 서버 시작 실패: {str(e)}. IP 주소({self.host})가 유효하지 않거나 이미 사용 중일 수 있습니다."
+            self.log_signal.emit(error_msg)
+            self.server_started = False
+
         except asyncio.CancelledError:
             pass
         
@@ -146,8 +154,17 @@ class SocketMonitorThread(QThread):
     def stop(self):
         """쓰레드 중지"""
         self._running = False
-        if self._loop and self.socket_server:
-            asyncio.run_coroutine_threadsafe(self.cleanup(), self._loop)
+
+        if self._loop:
+            try:
+                if self._loop and self.socket_server:
+                    asyncio.run_coroutine_threadsafe(self.cleanup(), self._loop)
+                else:
+                    # 서버가 시작되지 않았다면 loop 종료
+                    self._loop.call_soon_threadsafe(self._loop.stop)
+            
+            except Exception as e:
+                pass
             
     async def cleanup(self):
         """정리 작업"""

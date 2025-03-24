@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                          QTextEdit, QPushButton, QLabel, QSpinBox, QFileDialog, QGroupBox,
                          QCheckBox, QLineEdit, QGridLayout)  # QGridLayout 추가
 from .socket_server import SocketMonitorThread
+import socket
 
 class SocketLogWidget(QWidget):
     def __init__(self):
@@ -41,14 +42,21 @@ class SocketLogWidget(QWidget):
         # 소켓 모니터링 스레드
         self.socket_thread = None
     
-    def setup_config_group(self, host="192.168.1.37"):
+    def setup_config_group(self):
         """설정 그룹 생성"""
         self.config_group = QGroupBox("Socket Server Configuration")
         config_layout = QGridLayout()
+
+        # 현재 컴퓨터의 IP 주소 가져오기
+        try:
+            hostname = socket.gethostname()
+            current_ip = socket.gethostbyname(hostname)
+        except:
+            current_ip = "127.0.0.1"  # 실패 시 기본값
         
         # 호스트 설정
         config_layout.addWidget(QLabel("Host:"), 0, 0)  # 행 0, 열 0
-        self.host_input = QLineEdit("192.168.1.37")  
+        self.host_input = QLineEdit(current_ip)  
         self.host_input.setFixedWidth(120)
         self.host_input.setPlaceholderText("서버 IP")
         self.host_input.setToolTip("0.0.0.0은 모든 네트워크 인터페이스에서 연결 수락")
@@ -107,10 +115,19 @@ class SocketLogWidget(QWidget):
     
     def stop_socket_server(self):
         """소켓 서버 중지"""
-        if self.socket_thread and self.socket_thread.isRunning():
-            self.socket_thread.stop()
-            self.socket_thread.wait()
-            
+        if self.socket_thread:
+            try:
+                if self.socket_thread.isRunning():
+                    self.socket_thread.stop()
+                    self.socket_thread.wait(2000)
+
+                if self.socket_thread.isRunning():
+                    self.socket_thread.terminate()
+                    self.socket_thread.wait()
+
+            except Exception as e:
+                self.append_log(f"서버 종료 중 오류 발생: {str(e)}")
+
             ## UI 상태 변경
             self.host_input.setEnabled(True)  # IP 입력 활성화
             self.port_input.setEnabled(True)
