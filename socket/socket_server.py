@@ -33,7 +33,7 @@ class SocketServer:
             
     async def handle_client(self, reader, writer):
         """클라이언트 연결 처리"""
-        addr = writer.get_extra_info('peername')
+        addr = self.server.sockets[0].getsockname()
         if self.callback:
             self.callback(f"클라이언트 연결 수락: {addr[0]}:{addr[1]}")
             
@@ -71,10 +71,13 @@ class SocketServer:
                 await asyncio.sleep(0.01)    
 
         except (ConnectionResetError, asyncio.CancelledError):
-            pass
+            if self.callback:
+                self.callback(f"연결 종료: {type(e).__name__} - {str(e)}")
+
         except Exception as e:
             if self.callback:
-                self.callback(f"소켓 오류: {str(e)}")
+                self.callback(f"소켓 오류: {type(e).__name__} - {str(e)}")
+                
         finally:
             writer.close()
             await writer.wait_closed()
