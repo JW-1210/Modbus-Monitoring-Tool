@@ -1,8 +1,14 @@
 # Modbus-Monitoring-Tool
 modbus monitoring tool for robot
 
+## Dependencies
+- pyqt5
+###
+
 # 사용방법
-main.py 문 실행
+$ pip install pyqt5
+
+main.py 실행
 
 ### 로봇 IP 변경
 main.py self.robot_address 를 바꿔주세요
