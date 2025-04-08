@@ -19,6 +19,8 @@ main.py self.robot_address 를 바꿔주세요
 서버 IP 주소를 바꾸려면 main.py를 실행한 후, Host IP를 바꾸고 start server를 해주세요
 
 ! 주의 
+USE ONLY FOR CB SERIES!
+NOT DEVELOPED YET FOR e-SERIES
 
 로컬 pc 의 IP와 서버 IP가 맞지 않으면 오류가 발생합니다.
 
