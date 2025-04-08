@@ -1,9 +1,11 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                          QTextEdit, QPushButton, QLabel, QSpinBox, QFileDialog, QGroupBox,
-                         QCheckBox, QLineEdit, QGridLayout)  # QGridLayout 추가
+                         QCheckBox, QLineEdit, QGridLayout, QSplitter)  # QGridLayout 추가
+from PyQt5.QtCore import Qt
 from .socket_server import SocketMonitorThread
 import socket
+from datetime import datetime
 
 class SocketLogWidget(QWidget):
     def __init__(self):
@@ -11,14 +13,42 @@ class SocketLogWidget(QWidget):
         
         # 메인 레이아웃
         self.layout = QVBoxLayout()
+
+        # 분할 영역 생성
+        self.splitter = QSplitter(Qt.Horizontal)
         
+        # 서버 영역 (왼쪽)
+        self.server_widget = QWidget()
+        self.setup_config_group()
+        self.splitter.addWidget(self.server_widget)
+
+        # 클라이언트 영역 (오른쪽)
+        # self.client_widget = QWidget()
+        # self.setup_client_widget()
+        # self.splitter.addWidget(self.client_widget)
+
+        # 스플리터 비율 설정
+        self.splitter.setSizes([int(self.width() * 0.5), int(self.width() * 0.5)])
+        
+        # 스플리터를 메인 레이아웃에 추가
+        self.layout.addWidget(self.splitter)
+
         # 설정 그룹
         self.setup_config_group()
+        
+        # 소켓 모니터링 스레드
+        self.socket_thread = None
+        
+        # 클라이언트 스레드
+        self.client_thread = None
         
         # 로그 디스플레이
         self.log_display = QTextEdit()
         self.log_display.setReadOnly(True)
         self.layout.addWidget(self.log_display)
+
+        # 명령어 전송 그룹 추가
+        self.setup_command_group()
         
         # 버튼 레이아웃
         self.button_layout = QHBoxLayout()
@@ -90,6 +120,45 @@ class SocketLogWidget(QWidget):
         
         self.config_group.setLayout(config_layout)
         self.layout.addWidget(self.config_group)
+
+    def setup_command_group(self):
+        """명령어 전송 그룹 생성"""
+        self.command_group = QGroupBox("명령어 전송")
+        command_layout = QHBoxLayout()
+        
+        # 명령어 입력 필드
+        self.command_input = QLineEdit()
+        self.command_input.setPlaceholderText("전송할 명령어 입력")
+        self.command_input.setEnabled(False)  # 서버 시작 전에는 비활성화
+        command_layout.addWidget(self.command_input, 4)  # 비율 4
+        
+        # 전송 버튼
+        self.send_button = QPushButton("전송")
+        self.send_button.clicked.connect(self.send_command)
+        self.send_button.setEnabled(False)  # 서버 시작 전에는 비활성화
+        command_layout.addWidget(self.send_button, 1)  # 비율 1
+        
+        self.command_group.setLayout(command_layout)
+        self.layout.addWidget(self.command_group)
+    
+    def send_command(self):
+        """명령어 전송"""
+        command = self.command_input.text().strip()
+        if not command:
+            return
+        
+        if self.socket_thread and self.socket_thread.isRunning():
+            # 소켓 스레드의 명령어 전송 메서드 호출
+            self.socket_thread.send_command(command)
+            
+            # 로그에 표시
+            timestamp = datetime.now().strftime('%H:%M:%S')
+            self.append_log(f"[{timestamp}] 명령어 전송: {command}")
+            
+            # 입력 필드 초기화
+            self.command_input.clear()
+        else:
+            self.append_log("서버가 실행 중이지 않습니다. 먼저 서버를 시작하세요.")
     
     def start_socket_server(self):
         """소켓 서버 시작"""
@@ -107,9 +176,14 @@ class SocketLogWidget(QWidget):
         self.socket_thread.start()
         
         # UI 상태 변경
+        self.host_input.setEnabled(False)  # IP 입력 비활성화
         self.port_input.setEnabled(False)
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
+
+        # 명령어 입력 활성화
+        self.command_input.setEnabled(True)
+        self.send_button.setEnabled(True)
         
         self.append_log(f"Socket Server Started {host}:{port} ...")
     
@@ -133,6 +207,10 @@ class SocketLogWidget(QWidget):
             self.port_input.setEnabled(True)
             self.start_button.setEnabled(True)
             self.stop_button.setEnabled(False)
+            
+            # 명령어 입력 비활성화
+            self.command_input.setEnabled(False)
+            self.send_button.setEnabled(False)
             
             self.append_log("소켓 서버가 중지되었습니다.")
     

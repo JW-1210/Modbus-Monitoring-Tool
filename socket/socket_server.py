@@ -12,6 +12,7 @@ class SocketServer:
         self.running = True
         self.buffer = ""  # 메시지 버퍼 추가
         self.pose_parser = PoseParser()  # 포즈 파서 추가
+        self.client_writers = []  # 클라이언트 연결 저장
         
     def set_callback(self, callback):
         """콜백 함수 설정"""
@@ -37,6 +38,9 @@ class SocketServer:
         if self.callback:
             self.callback(f"클라이언트 연결 수락: {addr[0]}:{addr[1]}")
             
+        # 클라이언트 추가
+        self.client_writers.append(writer)
+
         # 버퍼 초기화
         self.buffer = ""
 
@@ -79,10 +83,41 @@ class SocketServer:
                 self.callback(f"소켓 오류: {type(e).__name__} - {str(e)}")
                 
         finally:
+            # 클라이언트 연결 리스트에서 제거
+            if writer in self.client_writers:
+                self.client_writers.remove(writer)
+
             writer.close()
             await writer.wait_closed()
             if self.callback:
                 self.callback(f"클라이언트 연결 종료: {addr[0]}:{addr[1]}")
+
+    async def send_to_all_clients(self, message):
+        """모든 연결된 클라이언트에 메시지 전송"""
+        if not self.client_writers:
+            if self.callback:
+                self.callback("연결된 클라이언트가 없습니다.")
+            return
+            
+        timestamp = datetime.now().strftime('%H:%M:%S')
+        
+        # 전송할 메시지에 줄바꿈 추가 (필요시)
+        if not message.endswith('\n'):
+            message += '\n'
+            
+        for writer in list(self.client_writers):
+            try:
+                writer.write(message.encode('utf-8'))
+                await writer.drain()
+                addr = writer.get_extra_info('peername')
+                if self.callback:
+                    self.callback(f"[{timestamp}] 메시지 전송 ({addr[0]}:{addr[1]}): {message.strip()}")
+            except Exception as e:
+                if self.callback:
+                    self.callback(f"메시지 전송 오류: {str(e)}")
+                # 연결 끊긴 클라이언트 제거
+                if writer in self.client_writers:
+                    self.client_writers.remove(writer)
 
     def process_buffer(self):
         """버퍼에서 완전한 메시지 추출"""
@@ -153,6 +188,14 @@ class SocketMonitorThread(QThread):
     def process_message(self, message):
         """소켓 메시지 처리"""
         self.log_signal.emit(message)
+
+    def send_command(self, command):
+        """명령어 전송 (외부에서 호출)"""
+        if self._loop and self.socket_server:
+            asyncio.run_coroutine_threadsafe(
+                self.socket_server.send_to_all_clients(command), 
+                self._loop
+            )
         
     def stop(self):
         """쓰레드 중지"""
