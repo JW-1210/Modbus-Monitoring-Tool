@@ -13,10 +13,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         # 로봇 ip 입력
-        # self.robot_address = "192.168.1.7"  # real robot
-        self.robot_address = "192.168.225.178" # wsl robot
-        # self.robot_address = "192.168.0.35"
-
+        self.robot_address = "192.168.1.7"  # real robot
+        # self.robot_address = "192.168.225.178" # wsl robot
+        
         super().__init__()
         self.setWindowTitle("Modbus & Socket Monitoring")
         self.setGeometry(100, 100, 1000, 600)

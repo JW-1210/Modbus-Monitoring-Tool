@@ -1,12 +1,4 @@
-import sys
-import asyncio
-from datetime import datetime
-import re
 import ast  # 문자열을 리스트로 변환하기 위한 모듈
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                           QTextEdit, QPushButton, QLabel, QSpinBox, QFileDialog, QGroupBox,
-                           QCheckBox)
-from PyQt5.QtCore import QThread, pyqtSignal, Qt
 
 class PoseParser:
     """UR이 전송하는 A_ 시작 메시지 파싱 클래스"""
