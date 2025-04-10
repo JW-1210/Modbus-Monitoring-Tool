@@ -101,6 +101,7 @@ class SocketLogWidget(QWidget):
         self.port_input.setRange(1024, 65535)
         self.port_input.setValue(12345)
         self.port_input.setFixedWidth(80)  # 포트 입력 필드 너비도 제한
+        self.port_input.setFixedHeight(20)
         config_layout.addWidget(self.port_input, 0, 3)  # 행 0, 열 3
         
         # 시작 버튼
