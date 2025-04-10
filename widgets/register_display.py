@@ -8,6 +8,7 @@ class RegisterDisplayWidget(QWidget):
     # 새로운 시그널 추가 - 레지스터 주소, 값
     register_write_signal = pyqtSignal(int, int)
     heartbeat_signal = pyqtSignal(bool)
+    rtde_record_signal = pyqtSignal(bool)  # RTDE 녹화 시그널 추가
 
     def __init__(self):
         super().__init__()
@@ -19,6 +20,7 @@ class RegisterDisplayWidget(QWidget):
 
         # 하트비트 그룹박스 추가
         self.heartbeat_group = QGroupBox("Wedling Control")
+        self.heartbeat_group.setFixedHeight(70)
         self.heartbeat_layout = QHBoxLayout()
 
         # 하트비트 버튼

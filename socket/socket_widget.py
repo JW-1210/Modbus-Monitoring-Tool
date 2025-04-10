@@ -77,8 +77,8 @@ class SocketLogWidget(QWidget):
         """설정 그룹 생성"""
         self.config_group = QGroupBox("Socket Server Configuration")
         config_layout = QGridLayout()
-        config_layout.setContentsMargins(5, 5, 5, 5)  # 여백 축소
-        self.config_group.setFixedHeight(45)
+        # config_layout.setContentsMargins(5, 5, 5, 5)  # 여백 축소
+        self.config_group.setFixedHeight(60)
 
         # 현재 컴퓨터의 IP 주소 가져오기
         try:
@@ -203,7 +203,7 @@ class SocketLogWidget(QWidget):
                     self.socket_thread.wait()
 
             except Exception as e:
-                self.append_log(f"서버 종료 중 오류 발생: {str(e)}")
+                self.append_log(f"Server Closing Err: {str(e)}")
 
             ## UI 상태 변경
             self.host_input.setEnabled(True)  # IP 입력 활성화
@@ -212,10 +212,10 @@ class SocketLogWidget(QWidget):
             self.stop_button.setEnabled(False)
             
             # 명령어 입력 비활성화
-            self.command_input.setEnabled(False)
-            self.send_button.setEnabled(False)
+            # self.command_input.setEnabled(False)
+            # self.send_button.setEnabled(False)
             
-            self.append_log("소켓 서버가 중지되었습니다.")
+            self.append_log("Socket Server Closed.")
     
     def append_log(self, text):
         """로그 추가 - 일반 로그와 파싱된 변수 구분"""

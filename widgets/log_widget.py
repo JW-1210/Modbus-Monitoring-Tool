@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, 
-                           QPushButton, QFileDialog)
+                            QPushButton, QFileDialog, QLabel)
 
 class LogWidget(QWidget):
     def __init__(self, monitor_thread):
@@ -68,3 +68,65 @@ class LogWidget(QWidget):
         """모든 레지스터 값을 일괄 출력하는 요청"""
         self.monitor_thread.run_monitor_once_manual()
         self.append_log("전체 레지스터 값 출력 요청 중...")
+    
+    def setup_rtde_recording(self, rtde_thread):
+        """RTDE 녹화 관련 UI 설정"""
+        self.rtde_thread = rtde_thread
+        
+        # RTDE 녹화 관련 레이아웃
+        rtde_layout = QHBoxLayout()
+        
+        # 녹화 상태 라벨
+        self.rtde_status_label = QLabel("RTDE: Standby")
+        self.rtde_status_label.setStyleSheet("color: gray;")
+        rtde_layout.addWidget(self.rtde_status_label)
+        
+        # 녹화 샘플 수
+        self.rtde_sample_label = QLabel("Sample: 0")
+        rtde_layout.addWidget(self.rtde_sample_label)
+        
+        # 빈 공간 추가
+        rtde_layout.addStretch(1)
+        
+        # RTDE 녹화 버튼
+        self.rtde_record_button = QPushButton("RTDE Record")
+        self.rtde_record_button.setCheckable(True)
+        self.rtde_record_button.clicked.connect(self.toggle_rtde_recording)
+        self.rtde_record_button.setStyleSheet("background-color: #4CAF50; color: white;")
+        rtde_layout.addWidget(self.rtde_record_button)
+        
+        # 레이아웃에 추가
+        self.layout.addLayout(rtde_layout)
+        
+        # RTDE 신호 연결
+        if self.rtde_thread:
+            self.rtde_thread.log_signal.connect(self.append_log)
+            self.rtde_thread.sample_count_signal.connect(self.update_rtde_sample_count)
+    
+    def toggle_rtde_recording(self):
+        """RTDE 녹화 시작/중지 토글"""
+        if not self.rtde_thread:
+            self.append_log("RTDE Thread is not working")
+            return
+        
+        is_recording = self.rtde_record_button.isChecked()
+        
+        if is_recording:
+            # 녹화 시작
+            self.rtde_thread.toggle_recording()
+            self.rtde_record_button.setText("RTDE Recording Stop")
+            self.rtde_record_button.setStyleSheet("background-color: #F44336; color: white;")
+            self.rtde_status_label.setText("RTDE: Recording")
+            self.rtde_status_label.setStyleSheet("color: red; font-weight: bold;")
+        else:
+            # 녹화 중지 및 저장
+            self.rtde_thread.toggle_recording()
+            self.rtde_record_button.setText("RTDE Recording")
+            self.rtde_record_button.setStyleSheet("background-color: #4CAF50; color: white;")
+            self.rtde_status_label.setText("RTDE: Standby")
+            self.rtde_status_label.setStyleSheet("color: gray;")
+
+    def update_rtde_sample_count(self, count):
+        """RTDE 녹화 샘플 수 업데이트"""
+        if self.rtde_sample_label:
+            self.rtde_sample_label.setText(f"Sample: {count}")

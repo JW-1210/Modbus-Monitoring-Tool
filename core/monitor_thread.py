@@ -33,14 +33,14 @@ class MonitorThread(QThread):
         """하트비트 상태 설정"""
         self._heartbeat_active = active
         if active:
-            self.log_signal.emit("웰딩 하트비트 전송 시작 (레지스터 211)")
+            self.log_signal.emit("Weld Machine HearBeat Start (Register 211)")
             # 하트비트 값 초기화
             self._heartbeat_value = 1
             # 첫 하트비트 전송
             if self._loop:
                 asyncio.run_coroutine_threadsafe(self._send_heartbeat(), self._loop)
         else:
-            self.log_signal.emit("웰딩 하트비트 전송 중지")
+            self.log_signal.emit("Wedl Machine HearBeat Stop")
 
     async def _send_heartbeat(self):
         """하트비트 값 전송"""
@@ -85,7 +85,7 @@ class MonitorThread(QThread):
                     )
         
         except Exception as e:
-            self.log_signal.emit(f"하트비트 전송 오류: {str(e)}")
+            self.log_signal.emit(f"HearBeat Sending Error: {str(e)}")
             # 오류 발생해도 계속 시도
             if self._heartbeat_active and self._loop:
                 self._loop.call_later(1.0, 
@@ -117,7 +117,7 @@ class MonitorThread(QThread):
     async def _write_register_value(self, register, value):
         """실제 비동기로 레지스터에 값을 쓰는 내부 메서드"""
         if not self.monitor or not self.monitor.client or not self.monitor.client.connected:
-            self.log_signal.emit(f"모드버스 연결이 활성화되지 않았습니다. 레지스터 {register}에 {value} 쓰기 실패.")
+            self.log_signal.emit(f"Modbus connection is Inactivated. Register {register} writing {value} Failed.")
             self.register_write_result_signal.emit(register, False)
             return
         
@@ -129,13 +129,13 @@ class MonitorThread(QThread):
             )
 
             # 성공 로그
-            self.log_signal.emit(f"레지스터 {register}에 값 {value} 쓰기 성공")
+            self.log_signal.emit(f"Register {register} sending {value} Sucessed")
             
             # 쓰기 후 값 업데이트를 위해 읽기
             result = await self.monitor.read_registers(register, 1)
             if result:
                 # 로그에 값 추가
-                self.log_signal.emit(f"레지스터 {register} 값 확인: {result[0]}")
+                self.log_signal.emit(f"Register {register} : {result[0]}")
                 # 값 캐시 및 UI 업데이트
                 self._last_values[register] = result[0]
                 self.register_update_signal.emit(register, result[0])
@@ -144,7 +144,7 @@ class MonitorThread(QThread):
             self.register_write_result_signal.emit(register, True)
 
         except Exception as e:
-            self.log_signal.emit(f"레지스터 {register}에 값 {value} 쓰기 실패: {str(e)}")
+            self.log_signal.emit(f"Register {register} sending {value} failed : {str(e)}")
             self.register_write_result_signal.emit(register, False)
             pass
         
@@ -186,7 +186,7 @@ class MonitorThread(QThread):
                             self.register_update_signal.emit(monitor_register, result[0])
 
                     except Exception as e:
-                        self.log_signal.emit(f"레지스터 {monitor_register} 읽기 오류: {str(e)}")
+                        self.log_signal.emit(f"Register {monitor_register} Reading Err: {str(e)}")
 
                 for register in list(self._pending_registers):
                     try:
@@ -198,7 +198,7 @@ class MonitorThread(QThread):
                             # self.log_signal.emit(f"레지스터 {register}의 초기값: {result[0]}")
                             self._pending_registers.remove(register)
                     except Exception as e:
-                        self.log_signal.emit(f"레지스터 {register} 읽기 오류: {str(e)}")
+                        self.log_signal.emit(f"Register {register} Reading Err: {str(e)}")
                         self._pending_registers.remove(register)  # 오류나도 제거
             
             try:
@@ -210,7 +210,7 @@ class MonitorThread(QThread):
                 pass
 
             except Exception as e:
-                self.log_signal.emit(f"모니터링 오류: {str(e)}")
+                self.log_signal.emit(f"Monitoring Err: {str(e)}")
                 await asyncio.sleep(1)  # 오류 발생 시 잠시 대기
             
             # 잠시 대기
@@ -232,7 +232,7 @@ class MonitorThread(QThread):
                     changes = self.check_changes(start_addr, values)
                     all_changes.update(changes)
             except Exception as e:
-                self.log_signal.emit(f"범위 읽기 오류 ({start_addr}-{start_addr+count-1}): {str(e)}")
+                self.log_signal.emit(f"ERR! Check range of register ({start_addr}-{start_addr+count-1}): {str(e)}")
         
         # 변경 사항이 있으면 로그로 출력
         if all_changes:
@@ -240,7 +240,7 @@ class MonitorThread(QThread):
             # self.log_signal.emit(f"\n[{timestamp}] 값 변경 감지:")
             self.log_signal.emit(f"\n")
             for addr, value in sorted(all_changes.items()):
-                self.log_signal.emit(f"주소 {addr}: {value}")
+                self.log_signal.emit(f"Register {addr}: {value}")
                 
                 # 모니터링 중인 레지스터는 UI도 갱신
                 if addr in self._monitored_registers:
@@ -267,7 +267,7 @@ class MonitorThread(QThread):
                 count = 128  # 128부터 255까지 (총 128개)
 
                 # 레지스터 초기화 로그
-                self.log_signal.emit(f"레지스터 {start_address}-{start_address+count-1} 초기화 시작...")
+                self.log_signal.emit(f"Register Initializing {start_address}-{start_address+count-1} ...")
                 
                  # 한 번에 여러 레지스터 쓰기 시도
                 try:
@@ -277,10 +277,10 @@ class MonitorThread(QThread):
                         address=start_address,
                         values=registers
                     )
-                    self.log_signal.emit(f"레지스터 {start_address}-{start_address+count-1} 일괄 초기화 완료")
+                    self.log_signal.emit(f"Register Initializing Done {start_address}-{start_address+count-1} ")
                 except Exception as bulk_error:
                     # 실패하면 개별적으로 쓰기
-                    self.log_signal.emit(f"일괄 초기화 실패, 개별 초기화로 전환: {str(bulk_error)}")
+                    self.log_signal.emit(f"ERR! Initializing Failed! Changing manualy: {str(bulk_error)}")
                     
                     for i in range(count):
                         addr = start_address + i
@@ -291,13 +291,13 @@ class MonitorThread(QThread):
                                 value=0
                             )
                         except Exception as e:
-                            self.log_signal.emit(f"레지스터 {addr} 초기화 오류: {str(e)}")
+                            self.log_signal.emit(f"ERR! Register Writing Failed {addr} : {str(e)}")
                 
-                self.log_signal.emit(f"레지스터 초기화 완료")
+                self.log_signal.emit(f"Register Initializing Done")
             else:
-                self.log_signal.emit("모드버스 연결이 활성화되지 않았습니다.")
+                self.log_signal.emit("ERR! Modbus Connection is INACTIVATED!")
         except Exception as e:
-            self.log_signal.emit(f"레지스터 초기화 중 오류 발생: {str(e)}")
+            self.log_signal.emit(f"ERR! {str(e)}")
     
     def reset_registers(self):
         self._reset_requested = True
@@ -308,7 +308,7 @@ class MonitorThread(QThread):
             self._monitored_registers.add(register)
             # 읽기 요청 신호 발생 - 스레드 안전한 방식
             self.request_read_register_signal.emit(register)
-            self.log_signal.emit(f"레지스터 {register} 모니터링 시작")
+            self.log_signal.emit(f"Register {register} Monitoring Start")
 
         # If there's already deleted _last_values entry, then delete
         if register in self._last_values:
@@ -322,7 +322,7 @@ class MonitorThread(QThread):
         """모니터링할 레지스터 제거"""
         if register in self._monitored_registers:
             self._monitored_registers.remove(register)
-            self.log_signal.emit(f"레지스터 {register} 모니터링 중지")
+            self.log_signal.emit(f"Register {register} Monitoring Stop")
         # if register in self._last_values:
         #     del self._last_values[register]
 
@@ -331,7 +331,7 @@ class MonitorThread(QThread):
         self.log_signal.emit(msg)
         
         # 레지스터 값 변경 메시지 처리
-        if msg.strip() and "주소" in msg and ":" in msg:
+        if msg.strip() and "Register" in msg and ":" in msg:
             try:
                 # "주소 130: 42" 형식의 메시지에서 레지스터 주소와 값 추출
                 parts = msg.split(":")
@@ -392,7 +392,7 @@ class MonitorThread(QThread):
                     if values:
                         for i, value in enumerate(values):
                             addr = start_addr + i
-                            self.log_signal.emit(f"주소 {addr}: {value}")
+                            self.log_signal.emit(f"Register {addr}: {value}")
 
                             # 모니터링 중인 레지스터는 UI도 갱신
                             if addr in self._monitored_registers:
@@ -400,9 +400,9 @@ class MonitorThread(QThread):
                                 self.register_update_signal.emit(addr, value)
 
                 except Exception as e:
-                    self.log_signal.emit(f"범위 읽기 오류 ({start_addr}-{start_addr+count-1}): {str(e)}")
+                    self.log_signal.emit(f"ERR! Check Register Range({start_addr}-{start_addr+count-1}): {str(e)}")
 
         except Exception as e:
-            self.log_signal.emit(f"레지스터 출력 중 오류 발생: {str(e)}")
+            self.log_signal.emit(f"ERR! Register Cannot Print : {str(e)}")
             # pass
 
