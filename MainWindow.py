@@ -86,8 +86,8 @@ class MainWindow(QMainWindow):
         self.central_widget.setLayout(self.main_layout)
         
         # MainWindow 생성자 내부
-        # 출력할 레지스터 
-        for reg in [202, 171, 172]:
+        # 기본으로 저장해서 출력할 레지스터 
+        for reg in [202, 138]:
             self.monitor_thread.add_monitored_register(reg)
             self.register_widget.register_spinbox.setValue(reg)
             self.register_widget.add_register_monitor()

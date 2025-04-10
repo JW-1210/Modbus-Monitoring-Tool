@@ -15,7 +15,7 @@ class RobotMonitor:
         
     async def connect(self):
         await self.client.connect()
-        self.callback("로봇 서버에 연결되었습니다.")
+        self.callback("Modbus Server Conneted")
     
     async def read_registers(self, address, count):
         try:
@@ -27,7 +27,7 @@ class RobotMonitor:
                 return result.registers
             return None
         except Exception as e:
-            self.callback(f"레지스터 읽기 오류: {e}")
+            self.callback(f"Register Read ERR: {e}")
             return None
 
     def check_changes(self, start_addr, current_values):
@@ -61,12 +61,12 @@ class RobotMonitor:
                     # self.callback(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                     self.callback("\n")
                     for addr, value in sorted(all_changes.items()):
-                        self.callback(f"주소 {addr}: {value}")
+                        self.callback(f"Register {addr}: {value}")
                 
                 await asyncio.sleep(0.1)
                 
         except Exception as e:
-            self.callback(f"모니터링 오류: {e}")
+            self.callback(f"Monitoring ERR!: {e}")
             
         finally:
             await self.client.close()
@@ -80,7 +80,7 @@ async def main():
         await monitor.connect()
         await monitor.monitor_loop()
     except KeyboardInterrupt:
-        print("\n모니터링을 종료합니다.")
+        print("\nClose Monitoring.")
     finally:
         await monitor.client.close()
 

@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                            QSpinBox, QPushButton, QGridLayout, QGroupBox,
                            QLineEdit)
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QScrollArea
 
 class RegisterDisplayWidget(QWidget):
     # 새로운 시그널 추가 - 레지스터 주소, 값
@@ -46,21 +47,29 @@ class RegisterDisplayWidget(QWidget):
         self.add_button = QPushButton("Add")
         self.add_button.clicked.connect(self.add_register_monitor)
         self.select_layout.addWidget(self.add_button)
-        
         self.group_layout.addLayout(self.select_layout)
         
         # 레지스터 값 표시 영역
         self.registers_grid = QGridLayout()
-        self.registers_grid.setColumnStretch(1, 1)  # 값 열을 늘려서 표시
-        
+        self.registers_grid.setAlignment(Qt.AlignTop)  # 상단 정렬 추가
+
         # 레이블 생성
         self.registers_grid.addWidget(QLabel("Register : "), 0, 0)
         self.registers_grid.addWidget(QLabel("Value"), 0, 1)
         
         self.group_layout.addLayout(self.registers_grid)
         self.group_box.setLayout(self.group_layout)
+
+        # 스크롤 영역 생성
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_container = QWidget()
+        scroll_container.setLayout(self.group_layout)
+        scroll_area.setWidget(scroll_container)
+        scroll_area.setMinimumWidth(380)  # 최소 너비 설정
+        self.layout.addWidget(scroll_area)
         
-        self.layout.addWidget(self.group_box)
+        # self.layout.addWidget(self.group_box)
         self.setLayout(self.layout)
         
         # 모니터링 중인 레지스터 목록
