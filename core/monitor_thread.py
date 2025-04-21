@@ -240,7 +240,8 @@ class MonitorThread(QThread):
             # self.log_signal.emit(f"\n[{timestamp}] 값 변경 감지:")
             self.log_signal.emit(f"\n")
             for addr, value in sorted(all_changes.items()):
-                self.log_signal.emit(f"주소 {addr}: {value}")
+                if addr == 202 or addr == 211:
+                    self.log_signal.emit(f"주소 {addr}: {value}")
                 
                 # 모니터링 중인 레지스터는 UI도 갱신
                 if addr in self._monitored_registers:
@@ -252,7 +253,7 @@ class MonitorThread(QThread):
         for i, value in enumerate(current_values):
             addr = start_addr + i
             # 128, 161, 211은 제외 (RobotMonitor 클래스와 동일하게 처리)
-            if addr == 128 or addr == 161 or addr == 211:
+            if addr == 128 or addr == 161:
                 continue
             if addr not in self._last_values or self._last_values[addr] != value:
                 changes[addr] = value
