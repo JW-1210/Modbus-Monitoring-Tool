@@ -30,16 +30,16 @@ class RobotMonitor:
             self.callback(f"Register Read ERR: {e}")
             return None
 
-    def check_changes(self, start_addr, current_values):
-        changes = {}
-        for i, value in enumerate(current_values):
-            addr = start_addr + i
-            if addr == 128 or addr ==161 or addr ==211:
-                continue
-            if addr not in self.previous_values or self.previous_values[addr] != value:
-                changes[addr] = value
-                self.previous_values[addr] = value
-        return changes
+    # def check_changes(self, start_addr, current_values):
+    #     changes = {}
+    #     for i, value in enumerate(current_values):
+    #         addr = start_addr + i
+    #         if addr == 128 or addr ==161 or addr ==211:
+    #             continue
+    #         if addr not in self.previous_values or self.previous_values[addr] != value:
+    #             changes[addr] = value
+    #             self.previous_values[addr] = value
+    #     return changes
 
     async def monitor_loop(self):
         ranges = [
@@ -53,9 +53,9 @@ class RobotMonitor:
                 
                 for start_addr, count in ranges:
                     values = await self.read_registers(start_addr, count)
-                    if values:
-                        changes = self.check_changes(start_addr, values)
-                        all_changes.update(changes)
+                    # if values:
+                    #     changes = self.check_changes(start_addr, values)
+                    #     all_changes.update(changes)
                 
                 if all_changes:
                     # self.callback(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

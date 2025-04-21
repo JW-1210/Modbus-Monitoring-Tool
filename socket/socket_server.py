@@ -36,7 +36,7 @@ class SocketServer:
         """클라이언트 연결 처리"""
         addr = self.server.sockets[0].getsockname()
         if self.callback:
-            self.callback(f"클라이언트 연결 수락: {addr[0]}:{addr[1]}")
+            self.callback(f"Client Connected: {addr[0]}:{addr[1]}")
             
         # 클라이언트 추가
         self.client_writers.append(writer)

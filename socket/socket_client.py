@@ -23,12 +23,12 @@ class SocketClient:
             self.connected = True
             
             if self.callback:
-                self.callback(f"서버에 연결되었습니다: {self.host}:{self.port}")
+                self.callback(f"server Connected: {self.host}:{self.port}")
                 
             return True
         except Exception as e:
             if self.callback:
-                self.callback(f"서버 연결 실패: {str(e)}")
+                self.callback(f"Server connection failed: {str(e)}")
             return False
             
     async def receive_messages(self):
@@ -39,7 +39,7 @@ class SocketClient:
                     data = await asyncio.wait_for(self.reader.read(4096), timeout=0.1)
                     if not data:
                         if self.callback:
-                            self.callback("서버와의 연결이 종료되었습니다.")
+                            self.callback("Connection Closed.")
                         self.connected = False
                         break
                     
@@ -47,13 +47,13 @@ class SocketClient:
                     message = data.decode('utf-8', errors='replace')
                     
                     if self.callback:
-                        self.callback(f"[{timestamp}] 수신: {message}")
+                        self.callback(f"[{timestamp}] Recieved: {message}")
                 except asyncio.TimeoutError:
                     # 타임아웃은 정상적인 상황
                     pass
                 except Exception as e:
                     if self.callback:
-                        self.callback(f"수신 오류: {str(e)}")
+                        self.callback(f"Recieve ERR: {str(e)}")
                     self.connected = False
                     break
                 
@@ -61,34 +61,8 @@ class SocketClient:
                 await asyncio.sleep(0.01)
         except Exception as e:
             if self.callback:
-                self.callback(f"수신 스레드 오류: {str(e)}")
+                self.callback(f"Recieve thread ERR: {str(e)}")
             self.connected = False
-    
-    async def send_message(self, message):
-        """서버로 메시지 전송"""
-        if not self.connected or not self.writer:
-            if self.callback:
-                self.callback("서버에 연결되어 있지 않습니다.")
-            return False
-        
-        try:
-            # 메시지에 줄바꿈이 없으면 추가
-            if not message.endswith('\n'):
-                message += '\n'
-                
-            self.writer.write(message.encode('utf-8'))
-            await self.writer.drain()
-            
-            timestamp = datetime.now().strftime('%H:%M:%S')
-            if self.callback:
-                self.callback(f"[{timestamp}] 전송: {message.strip()}")
-            
-            return True
-        except Exception as e:
-            if self.callback:
-                self.callback(f"전송 오류: {str(e)}")
-            self.connected = False
-            return False
     
     async def disconnect(self):
         """서버와 연결 종료"""
@@ -166,15 +140,7 @@ class SocketClientThread(QThread):
             self.connection_status_signal.emit(True)
         elif "연결이 종료되었습니다" in message or "연결 실패" in message:
             self.connection_status_signal.emit(False)
-    
-    def send_message(self, message):
-        """메시지 전송 (외부에서 호출)"""
-        if self._loop and self.client.connected:
-            asyncio.run_coroutine_threadsafe(
-                self.client.send_message(message), 
-                self._loop
-            )
-    
+        
     def stop(self):
         """쓰레드 중지"""
         self._running = False
