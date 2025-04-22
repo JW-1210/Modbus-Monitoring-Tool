@@ -4,10 +4,14 @@ import pandas as pd
 from datetime import datetime
 from PyQt5.QtCore import QThread, pyqtSignal
 
+# print(os.getcwd())
+os.chdir(os.getcwd())
+
 try:
     from rtde_control import RTDEControlInterface as RTDEControl
     from rtde_receive import RTDEReceiveInterface as RTDEReceive
     from rtde_io import RTDEIOInterface as RTDEIO
+
 
 except ImportError:
     # 모듈 미설치 시 로그용 가상 클래스
