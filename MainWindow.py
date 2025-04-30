@@ -170,6 +170,6 @@ class MainWindow(QMainWindow):
         self.monitor_thread.start()
         
         # 연결 로그 표시
-        self.log_widget.append_log(f"새 IP({robot_ip})로 연결 중...")
+        self.log_widget.append_log(f"new IP({self.robot_address})connecting...")
 
 
