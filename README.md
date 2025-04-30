@@ -6,7 +6,10 @@ modbus monitoring tool for robot
 ###
 
 # 사용방법
+- 가상환경을 꼭 만들어서 아래 패키지를 설치해주세요!  
 $ pip install pyqt5
+$ pip install pymodbus
+$ pip install pandas
 
 main.py 실행
 
