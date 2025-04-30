@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5.QtWidgets import QTabWidget, QApplication, QMainWindow, QWidget, QHBoxLayout
+from PyQt5.QtWidgets import QTabWidget, QApplication, QMainWindow, QWidget, QHBoxLayout, QGroupBox, QLabel, QLineEdit, QPushButton
 
 # 패키지 모듈 가져오기
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,9 +14,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         # 로봇 ip 입력
-        self.robot_address = "192.168.1.7"  # real robot
-        # self.robot_address = "192.168.225.178" # wsl robot
-        
+        self.robot_address = "192.168.1.7"  # 기본값으로 설정
+
         super().__init__()
         self.setWindowTitle("Modbus & Socket Monitoring")
         self.setGeometry(100, 100, 1000, 600)
@@ -27,6 +26,9 @@ class MainWindow(QMainWindow):
         
         # 전체 레이아웃
         self.main_layout = QHBoxLayout()
+
+        # IP 설정 UI 추가
+        self.setup_ip_config()
 
         # 탭 위젯 생성
         self.tab_widget = QTabWidget()
@@ -118,4 +120,56 @@ class MainWindow(QMainWindow):
             self.socket_log_widget.stop_socket_server()
         
         event.accept()
+
+    def setup_ip_config(self):
+        # IP 설정 그룹박스
+        self.ip_group = QGroupBox("Robot IP Configuration")
+        ip_layout = QHBoxLayout()
+        
+        # IP 주소 입력 필드
+        ip_layout.addWidget(QLabel("Robot IP:"))
+        self.ip_input = QLineEdit(self.robot_address)  # 기본값으로 기존 IP 설정
+        self.ip_input.setFixedWidth(150)
+        ip_layout.addWidget(self.ip_input)
+        
+        # 연결 버튼
+        self.connect_button = QPushButton("Connect")
+        self.connect_button.clicked.connect(self.connect_to_robot)
+        ip_layout.addWidget(self.connect_button)
+        
+        # 빈 공간 추가
+        ip_layout.addStretch()
+        
+        self.ip_group.setLayout(ip_layout)
+        self.main_layout.addWidget(self.ip_group)
+
+    def connect_to_robot(self):
+        # 현재 입력된 IP 가져오기
+        self.robot_address = self.ip_input.text().strip()
+        
+        # 기존 스레드 중지
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.isRunning():
+            self.monitor_thread.stop()
+            self.monitor_thread.wait()
+        
+        # 새 스레드 생성 및 시작
+        self.monitor_thread = MonitorThread(host=self.robot_address)  # 업데이트된 속성 사용
+        
+        # 로그 시그널 연결
+        self.monitor_thread.log_signal.connect(self.log_widget.append_log)
+        
+        # 레지스터 업데이트 시그널 연결
+        self.monitor_thread.register_update_signal.connect(self.register_widget.update_register_value)
+        
+        # 하트비트 연결
+        self.register_widget.heartbeat_signal.connect(
+            self.monitor_thread.set_heartbeat
+        )
+        
+        # 모니터 스레드 시작
+        self.monitor_thread.start()
+        
+        # 연결 로그 표시
+        self.log_widget.append_log(f"새 IP({robot_ip})로 연결 중...")
+
 
