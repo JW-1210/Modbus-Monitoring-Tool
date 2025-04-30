@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QTabWidget, QApplication, QMainWindow, QWidget, QHBo
 
 # 패키지 모듈 가져오기
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-__package__ = 'modbus_monitoring'
+__package__ = 'Modbus-Monitoring-Tool'
 from .widgets import RegisterDisplayWidget, LogWidget
 from .core import MonitorThread
 from .socket import SocketLogWidget
