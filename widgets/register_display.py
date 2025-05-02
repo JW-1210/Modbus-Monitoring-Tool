@@ -10,11 +10,34 @@ class RegisterDisplayWidget(QWidget):
     register_write_signal = pyqtSignal(int, int)
     heartbeat_signal = pyqtSignal(bool)
     rtde_record_signal = pyqtSignal(bool)  # RTDE 녹화 시그널 추가
+    # IP 주소 변경 시그널 추가
+    ip_change_signal = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
         self.layout = QVBoxLayout()
+
+        # IP 설정 그룹 추가 (새로 추가)
+        self.ip_group = QGroupBox("Robot IP Configuration")
+        self.ip_layout = QHBoxLayout()
         
+        # IP 라벨 및 입력 필드
+        self.ip_layout.addWidget(QLabel("Robot IP:"))
+        self.ip_input = QLineEdit()
+        self.ip_input.setFixedWidth(150)
+        self.ip_layout.addWidget(self.ip_input)
+        
+        # 연결 버튼
+        self.ip_connect_button = QPushButton("Connect")
+        self.ip_connect_button.clicked.connect(self.on_ip_connect)
+        self.ip_layout.addWidget(self.ip_connect_button)
+        
+        # 빈 공간 추가
+        self.ip_layout.addStretch()
+
+        self.ip_group.setLayout(self.ip_layout)
+        self.layout.addWidget(self.ip_group)
+
         # 레지스터 모니터링 그룹
         self.group_box = QGroupBox("Register Monitoring")
         self.group_layout = QVBoxLayout()
@@ -78,6 +101,16 @@ class RegisterDisplayWidget(QWidget):
 
         # 하트비트 상태
         self.heartbeat_active = False
+
+    def set_robot_ip(self, ip):
+        """로봇 IP 설정"""
+        self.ip_input.setText(ip)
+
+    def on_ip_connect(self):
+        """IP 연결 버튼 클릭 처리"""
+        ip = self.ip_input.text().strip()
+        if ip:
+            self.ip_change_signal.emit(ip)
 
     def toggle_heartbeat(self):
         '''heartbeat active/unactive toggle'''

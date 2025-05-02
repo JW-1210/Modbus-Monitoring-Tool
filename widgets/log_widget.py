@@ -59,7 +59,7 @@ class LogWidget(QWidget):
     def reset_registers(self):
         # 모니터 스레드에 초기화 신호 보내기
         self.monitor_thread.reset_registers()
-        self.append_log("레지스터 초기화 명령을 전송했습니다.")
+        self.append_log("Send Register Reset Order.")
         
     def clear_log(self):
         self.log_display.clear()
@@ -67,7 +67,7 @@ class LogWidget(QWidget):
     def print_all_registers(self):
         """모든 레지스터 값을 일괄 출력하는 요청"""
         self.monitor_thread.run_monitor_once_manual()
-        self.append_log("전체 레지스터 값 출력 요청 중...")
+        self.append_log("Request All Registers...")
     
     def setup_rtde_recording(self, rtde_thread):
         """RTDE 녹화 관련 UI 설정"""

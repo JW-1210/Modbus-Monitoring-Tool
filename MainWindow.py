@@ -27,9 +27,6 @@ class MainWindow(QMainWindow):
         # 전체 레이아웃
         self.main_layout = QHBoxLayout()
 
-        # IP 설정 UI 추가
-        self.setup_ip_config()
-
         # 탭 위젯 생성
         self.tab_widget = QTabWidget()
 
@@ -51,6 +48,10 @@ class MainWindow(QMainWindow):
         
         # RegisterDisplayWidget 생성
         self.register_widget = RegisterDisplayWidget()
+        self.register_widget.set_robot_ip(self.robot_address)  # 현재 IP 설정
+
+        # IP 변경 시그널 연결
+        self.register_widget.ip_change_signal.connect(self.connect_to_robot)
         
         # 로그 시그널 연결
         self.monitor_thread.log_signal.connect(self.log_widget.append_log)
@@ -143,10 +144,16 @@ class MainWindow(QMainWindow):
         self.ip_group.setLayout(ip_layout)
         self.main_layout.addWidget(self.ip_group)
 
-    def connect_to_robot(self):
-        # 현재 입력된 IP 가져오기
-        self.robot_address = self.ip_input.text().strip()
+    def connect_to_robot(self, ip):
+        """IP 주소가 변경될 때 호출되는 메서드"""
+        if ip == self.robot_address:
+            # IP가 동일하면 아무것도 하지 않음
+            self.log_widget.append_log(f"이미 {ip}에 연결되어 있습니다.")
+            return
         
+        # IP 주소 업데이트
+        self.robot_address = ip
+
         # 기존 스레드 중지
         if hasattr(self, 'monitor_thread') and self.monitor_thread.isRunning():
             self.monitor_thread.stop()
